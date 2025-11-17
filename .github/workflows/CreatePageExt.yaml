@@ -45,12 +45,13 @@ jobs:
             echo "Creating $PAGE_FILE"
 
             cat <<EOF > "$PAGE_FILE"
-            pageextension ${NAME}PageExt extends "Vendor Card"
-            {
-            }
-            EOF
+          pageextension ${NAME}PageExt extends "Vendor Card"
+          {
+          }
+          EOF
 
-            done <<< "${{ steps.detect.outputs.table_ext }}"
+                      done <<< "${{ steps.detect.outputs.table_ext }}"
+
 
 
       - name: Commit generated files
