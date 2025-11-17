@@ -18,43 +18,40 @@ jobs:
           fetch-depth: 2
 
 
-      - name: Detect table extension files
+      - name: Detect table extensions
         id: detect
         run: |
-          # Get previous commit if exists
-          PREV=$(git rev-parse HEAD^ 2>/dev/null || echo "")
-
-          if [ -z "$PREV" ]; then
-            echo "No previous commit — scanning full repo."
-            FILES=$(grep -Rl "tableextension" . --include="TableExtension*.al" || true)
-          else
-            FILES=$(git diff --name-only "$PREV" HEAD | grep -E "TableExtension.*\.al$" || true)
-          fi
+          # Find files matching your naming style
+          FILES=$(find src -maxdepth 1 -type f -iname "Tab-Ext*.al" || true)
 
           echo "Detected files:"
           echo "$FILES"
 
+          # Make it available to later steps
           echo "table_ext<<EOF" >> $GITHUB_OUTPUT
           echo "$FILES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
 
 
+
       - name: Create Page Extensions
         if: steps.detect.outputs.table_ext != ''
         run: |
-          for FILE in ${{ steps.detect.outputs.table_ext }}; do
+          while IFS= read -r FILE; do
             NAME=$(basename "$FILE" .al)
             PAGE_FILE="src/${NAME}PageExt.al"
 
             echo "Creating $PAGE_FILE"
 
-            cat <<'EOF' > "$PAGE_FILE"
-            pageextension DummyPageExt extends "Customer Card"
+            cat <<EOF > "$PAGE_FILE"
+            pageextension ${NAME}PageExt extends "Vendor Card"
             {
             }
             EOF
-                      done
+
+            done <<< "${{ steps.detect.outputs.table_ext }}"
+
 
       - name: Commit generated files
         if: steps.detect.outputs.table_ext != ''
