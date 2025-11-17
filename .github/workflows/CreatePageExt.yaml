@@ -14,22 +14,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: Detect Table Extensions
+
+      - name: Detect table extension files
         id: detect
         run: |
-          # Find previous commit safely
+          # Get previous commit if exists
           PREV=$(git rev-parse HEAD^ 2>/dev/null || echo "")
 
           if [ -z "$PREV" ]; then
-            echo "No previous commit found. Using all files."
-            FILES=$(ls src | grep -E "TableExtension.*\.al$" || true)
+            echo "No previous commit — scanning full repo."
+            FILES=$(grep -Rl "tableextension" . --include="TableExtension*.al" || true)
           else
-            FILES=$(git diff --name-only $PREV HEAD | grep -E "TableExtension.*\.al$" || true)
+            FILES=$(git diff --name-only "$PREV" HEAD | grep -E "TableExtension.*\.al$" || true)
           fi
 
-          echo "Detected files: $FILES"
-          echo "table_ext=$FILES" >> $GITHUB_OUTPUT
+          echo "Detected files:"
+          echo "$FILES"
+
+          echo "table_ext<<EOF" >> $GITHUB_OUTPUT
+          echo "$FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
 
 
       - name: Create Page Extensions
