@@ -1,0 +1,54 @@
+name: Generate Page Extension
+
+on:
+  push:
+    paths:
+      - "src/*.al"
+    branches:
+      - main
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Table Extensions
+        id: detect
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD | grep -E "TableExtension.*\.al$" || true)
+          echo "table_ext=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Create Page Extensions
+        if: steps.detect.outputs.table_ext != ''
+        run: |
+          for FILE in ${{ steps.detect.outputs.table_ext }}; do
+            NAME=$(basename "$FILE" .al)
+            PAGE_FILE="src/${NAME}PageExt.al"
+
+            echo "Creating $PAGE_FILE"
+
+            cat <<'EOF' > "$PAGE_FILE"
+            pageextension DummyPageExt extends "Customer Card"
+            {
+            }
+            EOF
+                      done
+
+      - name: Commit generated files
+        if: steps.detect.outputs.table_ext != ''
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          git add src/*PageExt.al
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "Auto-create page extension"
+          git push
