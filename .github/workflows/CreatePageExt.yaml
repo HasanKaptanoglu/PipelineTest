@@ -1,5 +1,9 @@
 name: Generate Page Extension
 
+permissions:
+  contents: write
+
+
 on:
   push:
     paths:
