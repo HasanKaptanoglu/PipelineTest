@@ -18,8 +18,19 @@ jobs:
       - name: Detect Table Extensions
         id: detect
         run: |
-          FILES=$(git diff --name-only HEAD~1 HEAD | grep -E "TableExtension.*\.al$" || true)
+          # Find previous commit safely
+          PREV=$(git rev-parse HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV" ]; then
+            echo "No previous commit found. Using all files."
+            FILES=$(ls src | grep -E "TableExtension.*\.al$" || true)
+          else
+            FILES=$(git diff --name-only $PREV HEAD | grep -E "TableExtension.*\.al$" || true)
+          fi
+
+          echo "Detected files: $FILES"
           echo "table_ext=$FILES" >> $GITHUB_OUTPUT
+
 
       - name: Create Page Extensions
         if: steps.detect.outputs.table_ext != ''
